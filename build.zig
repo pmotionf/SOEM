@@ -48,25 +48,43 @@ pub fn build(b: *std.Build) !void {
     const soem_sources = try globFiles(
         b.path("soem"),
         std.heap.smp_allocator,
-        .{ .extension = "c", .recursive = true },
+        .{ .extension = "c" },
     );
     defer std.heap.smp_allocator.free(soem_sources);
+    const soem_headers = try globFiles(
+        b.path("soem"),
+        std.heap.smp_allocator,
+        .{ .extension = "h" },
+    );
+    defer std.heap.smp_allocator.free(soem_headers);
 
     const osal_path = b.path("osal").path(b, os_subdir);
     const osal_sources = try globFiles(
         osal_path,
         std.heap.smp_allocator,
-        .{ .extension = "c", .recursive = true },
+        .{ .extension = "c" },
     );
     defer std.heap.smp_allocator.free(osal_sources);
+    const osal_headers = try globFiles(
+        osal_path,
+        std.heap.smp_allocator,
+        .{ .extension = "h" },
+    );
+    defer std.heap.smp_allocator.free(osal_headers);
 
     const oshw_path = b.path("oshw").path(b, os_subdir);
     const oshw_sources = try globFiles(
         oshw_path,
         std.heap.smp_allocator,
-        .{ .extension = "c", .recursive = true },
+        .{ .extension = "c" },
     );
     defer std.heap.smp_allocator.free(oshw_sources);
+    const oshw_headers = try globFiles(
+        oshw_path,
+        std.heap.smp_allocator,
+        .{ .extension = "h" },
+    );
+    defer std.heap.smp_allocator.free(oshw_headers);
 
     lib.root_module.addCSourceFiles(.{
         .root = b.path("soem"),
@@ -75,6 +93,15 @@ pub fn build(b: *std.Build) !void {
         .flags = c_flags,
     });
     lib.root_module.addIncludePath(b.path("soem"));
+    for (soem_headers) |header| {
+        var buffer: [256]u8 = undefined;
+        @memcpy(buffer[0..5], "soem/");
+        @memcpy(buffer[5..][0..header.len], header);
+        lib.installHeader(
+            b.path("soem").path(b, header),
+            buffer[0 .. header.len + 5],
+        );
+    }
 
     lib.root_module.addCSourceFiles(.{
         .root = osal_path,
@@ -84,6 +111,16 @@ pub fn build(b: *std.Build) !void {
     });
     lib.root_module.addIncludePath(b.path("osal"));
     lib.root_module.addIncludePath(osal_path);
+    lib.installHeader(b.path("osal/osal.h"), "soem/osal.h");
+    for (osal_headers) |header| {
+        var buffer: [256]u8 = undefined;
+        @memcpy(buffer[0..5], "soem/");
+        @memcpy(buffer[5..][0..header.len], header);
+        lib.installHeader(
+            osal_path.path(b, header),
+            buffer[0 .. header.len + 5],
+        );
+    }
 
     lib.root_module.addCSourceFiles(.{
         .root = oshw_path,
@@ -99,6 +136,15 @@ pub fn build(b: *std.Build) !void {
         } else if (target.result.ptrBitWidth() == 32) {
             lib.root_module.addLibraryPath(oshw_path.path(b, "wpcap/Lib"));
         }
+    }
+    for (oshw_headers) |header| {
+        var buffer: [256]u8 = undefined;
+        @memcpy(buffer[0..5], "soem/");
+        @memcpy(buffer[5..][0..header.len], header);
+        lib.installHeader(
+            oshw_path.path(b, header),
+            buffer[0 .. header.len + 5],
+        );
     }
 
     for (os_libs) |os_lib| {
