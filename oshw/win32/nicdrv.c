@@ -40,7 +40,7 @@
 
 #include <winsock2.h>
 #include "ethercattype.h"
-#include <Mmsystem.h>
+#include <mmsystem.h>
 #include "nicdrv.h"
 #include "osal_win32.h"
 
