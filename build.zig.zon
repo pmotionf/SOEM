@@ -1,0 +1,15 @@
+.{
+    .name = .soem,
+    .fingerprint = 0x30ccde7443fac184,
+    .minimum_zig_version = "0.14.0",
+    .version = "1.4.0",
+    .paths = .{
+        "soem",
+        "osal",
+        "oshw",
+        "LICENSE",
+        "README.md",
+        "build.zig",
+        "build.zig.zon",
+    },
+}

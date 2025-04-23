@@ -1,7 +1,5 @@
 const std = @import("std");
 
-const version = std.SemanticVersion.parse("1.4.0") catch unreachable;
-
 pub fn build(b: *std.Build) !void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
@@ -16,13 +14,11 @@ pub fn build(b: *std.Build) !void {
         .name = "soem",
         .target = target,
         .optimize = optimize,
-        .version = version,
         .link_libc = true,
     }) else b.addSharedLibrary(.{
         .name = "soem",
         .target = target,
         .optimize = optimize,
-        .version = version,
         .link_libc = true,
     });
 
