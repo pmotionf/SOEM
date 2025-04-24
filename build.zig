@@ -127,6 +127,11 @@ pub fn build(b: *std.Build) !void {
     lib.root_module.addIncludePath(oshw_path);
     if (target.result.os.tag == .windows) {
         lib.root_module.addIncludePath(oshw_path.path(b, "wpcap/Include"));
+        lib.installHeadersDirectory(
+            oshw_path.path(b, "wpcap/Include"),
+            "",
+            .{},
+        );
         if (target.result.ptrBitWidth() == 64) {
             lib.root_module.addLibraryPath(oshw_path.path(b, "wpcap/Lib/x64"));
         } else if (target.result.ptrBitWidth() == 32) {
