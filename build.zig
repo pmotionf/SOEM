@@ -10,16 +10,16 @@ pub fn build(b: *std.Build) !void {
         "link mode of library",
     ) orelse .static;
 
-    const lib = if (link == .static) b.addStaticLibrary(.{
-        .name = "soem",
+    const lib_mod = b.createModule(.{
         .target = target,
         .optimize = optimize,
         .link_libc = true,
-    }) else b.addSharedLibrary(.{
+    });
+
+    const lib = b.addLibrary(.{
         .name = "soem",
-        .target = target,
-        .optimize = optimize,
-        .link_libc = true,
+        .linkage = link,
+        .root_module = lib_mod,
     });
 
     const os_libs: []const []const u8 = switch (target.result.os.tag) {
@@ -82,13 +82,13 @@ pub fn build(b: *std.Build) !void {
     );
     defer std.heap.smp_allocator.free(oshw_headers);
 
-    lib.root_module.addCSourceFiles(.{
+    lib_mod.addCSourceFiles(.{
         .root = b.path("soem"),
         .files = soem_sources,
         .language = .c,
         .flags = c_flags,
     });
-    lib.root_module.addIncludePath(b.path("soem"));
+    lib_mod.addIncludePath(b.path("soem"));
     for (soem_headers) |header| {
         var buffer: [256]u8 = undefined;
         @memcpy(buffer[0..5], "soem/");
@@ -99,14 +99,14 @@ pub fn build(b: *std.Build) !void {
         );
     }
 
-    lib.root_module.addCSourceFiles(.{
+    lib_mod.addCSourceFiles(.{
         .root = osal_path,
         .files = osal_sources,
         .language = .c,
         .flags = c_flags,
     });
-    lib.root_module.addIncludePath(b.path("osal"));
-    lib.root_module.addIncludePath(osal_path);
+    lib_mod.addIncludePath(b.path("osal"));
+    lib_mod.addIncludePath(osal_path);
     lib.installHeader(b.path("osal/osal.h"), "soem/osal.h");
     for (osal_headers) |header| {
         var buffer: [256]u8 = undefined;
@@ -118,24 +118,24 @@ pub fn build(b: *std.Build) !void {
         );
     }
 
-    lib.root_module.addCSourceFiles(.{
+    lib_mod.addCSourceFiles(.{
         .root = oshw_path,
         .files = oshw_sources,
         .language = .c,
         .flags = c_flags,
     });
-    lib.root_module.addIncludePath(oshw_path);
+    lib_mod.addIncludePath(oshw_path);
     if (target.result.os.tag == .windows) {
-        lib.root_module.addIncludePath(oshw_path.path(b, "wpcap/Include"));
+        lib_mod.addIncludePath(oshw_path.path(b, "wpcap/Include"));
         lib.installHeadersDirectory(
             oshw_path.path(b, "wpcap/Include"),
             "",
             .{},
         );
         if (target.result.ptrBitWidth() == 64) {
-            lib.root_module.addLibraryPath(oshw_path.path(b, "wpcap/Lib/x64"));
+            lib_mod.addLibraryPath(oshw_path.path(b, "wpcap/Lib/x64"));
         } else if (target.result.ptrBitWidth() == 32) {
-            lib.root_module.addLibraryPath(oshw_path.path(b, "wpcap/Lib"));
+            lib_mod.addLibraryPath(oshw_path.path(b, "wpcap/Lib"));
         }
     }
     for (oshw_headers) |header| {
@@ -149,7 +149,7 @@ pub fn build(b: *std.Build) !void {
     }
 
     for (os_libs) |os_lib| {
-        lib.root_module.linkSystemLibrary(
+        lib_mod.linkSystemLibrary(
             os_lib,
             .{ .needed = true, .preferred_link_mode = .static },
         );
