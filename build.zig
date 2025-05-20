@@ -1,5 +1,7 @@
 const std = @import("std");
 
+const EthercatVersion = enum { version1, version2 };
+
 pub fn build(b: *std.Build) !void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
@@ -10,11 +12,25 @@ pub fn build(b: *std.Build) !void {
         "link mode of library",
     ) orelse .static;
 
+    const version = b.option(
+        EthercatVersion,
+        "version",
+        "EtherCAT version",
+    ) orelse .version1;
+
+    const options = b.addOptions();
+    options.addOption(EthercatVersion, "ethercat_version", version);
+
     const lib_mod = b.createModule(.{
         .target = target,
         .optimize = optimize,
         .link_libc = true,
     });
+    if (version == .version1) {
+        lib_mod.addCMacro("EC_VER1", "");
+    } else {
+        lib_mod.addCMacro("EC_VER2", "");
+    }
 
     const lib = b.addLibrary(.{
         .name = "soem",
